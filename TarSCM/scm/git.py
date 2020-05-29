@@ -59,18 +59,18 @@ class Git(Scm):
                 cwd=self.clone_dir)[1]
 
             # merge may fail when not a remote branch, that is fine
-            rcode, output = self.helpers.run_cmd(
-                self._get_scm_cmd() + ['merge', 'origin/' + self.revision],
-                cwd=self.clone_dir,
-                interactive=True)
-
-            # we must test also merge a possible local tag/branch
-            # because the user may have changed the revision in _service file
-            if rcode != 0 and 'not something we can merge' in output:
-                self.helpers.run_cmd(
-                    self._get_scm_cmd() + ['merge', self.revision],
-                    cwd=self.clone_dir,
-                    interactive=True)
+            ret = self.helpers.run_cmd(
+                  self._get_scm_cmd() + ['merge', 'origin/' + self.revision],
+                  cwd=self.clone_dir,
+                  interactive=True)
+            if ret[0] > 0:
+                print("Not a remote branch, trying local branch or tag")
+                ret = self.helpers.run_cmd(
+                      self._get_scm_cmd() + ['merge', self.revision],
+                      cwd=self.clone_dir,
+                      interactive=True)
+                if ret[0] > 0:
+                   print("git merged failed with: ", ret[1])
 
             # validate the existens of the revision
             if self.revision and not self._ref_exists(self.revision):
